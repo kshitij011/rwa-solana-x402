@@ -4,9 +4,19 @@ import { X402PaymentHandler } from "x402-solana/server";
 import dotenv from "dotenv";
 dotenv.config();
 
-
 const app = express();
-app.use(cors());
+
+// ------------------ SECURE CORS ------------------
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",            // local frontend for dev
+      "https://your-frontend-domain.com", // your production frontend
+    ],
+    methods: ["POST"],
+  })
+);
+
 app.use(express.json());
 
 // IMPORTANT: devnet USDC mint
@@ -15,7 +25,9 @@ const USDC_DEVNET = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 const x402 = new X402PaymentHandler({
   network: "solana-devnet",
   facilitatorUrl: "https://facilitator.payai.network",
-  treasuryAddress: process.env.TREASURY_WALLET_ADDRESS? process.env.TREASURY_WALLET_ADDRESS : "", // YOUR WALLET PUBLIC KEY
+  treasuryAddress: process.env.TREASURY_WALLET_ADDRESS
+    ? process.env.TREASURY_WALLET_ADDRESS
+    : "",
 });
 
 // ----------------------------------
@@ -23,7 +35,8 @@ app.post("/api/paid-endpoint", async (req, res) => {
   const paymentHeader = x402.extractPayment(req.headers);
 
   const totalCost = req.headers["x-total-cost"];
-  if (!totalCost) return res.status(400).json({ error: "Missing x-total-cost header" });
+  if (!totalCost)
+    return res.status(400).json({ error: "Missing x-total-cost header" });
 
   const microUsdc = String(Math.round(Number(totalCost) * 1_000_000));
 
@@ -51,7 +64,6 @@ app.post("/api/paid-endpoint", async (req, res) => {
     return res.status(402).json({ error: "Invalid payment" });
   }
 
-  // Get tx signature
   const tx = await x402.settlePayment(paymentHeader, paymentRequirements);
   console.log(`Payment settled successfully for Tx: ${tx}`);
   const txHash = tx.transaction;
@@ -63,7 +75,6 @@ app.post("/api/paid-endpoint", async (req, res) => {
     msg: "Payment success",
   });
 });
-
 
 // ----------------------------------
 app.listen(4000, () => {
