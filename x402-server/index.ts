@@ -9,24 +9,16 @@ const FRONTEND_ORIGIN = "https://rwa-solana-x402.vercel.app";
 
 
 // ------------------------------------
-// GLOBAL CORS CONFIGURATION
-// This ensures that preflight (OPTIONS) requests and subsequent POST requests
-// get the necessary Access-Control-Allow-Origin header set correctly.
+// GLOBAL CORS CONFIGURATION (Updated for stricter preflight compliance)
+// Changed allowedHeaders to '*' and added maxAge for caching preflight results.
 // ------------------------------------
 app.use(
   cors({
     origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "x-total-cost",
-      "x-property-id",
-      "x-quantity",
-      "x-payment",
-      "authorization",
-    ],
-    // IMPORTANT: Credentials must be true if the frontend requires them, but since you set it to false, we keep it.
+    allowedHeaders: "*", // Use wildcard to ensure all custom headers pass preflight
     credentials: false,
+    maxAge: 86400 // Cache preflight response for 24 hours
   })
 );
 
@@ -71,10 +63,7 @@ app.post("/api/paid-endpoint", async (req, res) => {
   if (!paymentHeader) {
     const resp = x402.create402Response(paymentRequirements);
 
-    // Manual CORS header setting has been removed here.
-    // The global app.use(cors) handles this automatically for all responses,
-    // including the 402 response, which resolves the preflight issue.
-
+    // Global CORS middleware handles headers here.
     return res.status(resp.status).json(resp.body);
   }
 
