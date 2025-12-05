@@ -11,7 +11,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",            // local frontend for dev
-      "https://your-frontend-domain.com", // your production frontend
+      "https://rwa-solana-x402.vercel.app", // your production frontend
     ],
     methods: ["POST"],
   })

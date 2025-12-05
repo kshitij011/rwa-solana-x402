@@ -122,7 +122,8 @@ export function BuySharesModal({ open, onOpenChange, property, onSharesMinted }:
       setIsPurchasing(true);
 
       const response = await client.fetch(
-        "http://localhost:4000/api/paid-endpoint",
+        // "http://localhost:4000/api/paid-endpoint",
+        "https://rwa-solana-x402.onrender.com/api/paid-endpoint",
         {
           method: "POST",
           headers: {
