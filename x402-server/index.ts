@@ -5,13 +5,16 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const FRONTEND_ORIGIN = "https://rwa-solana-x402.vercel.app";
+
 
 // ------------------------------------
-// GLOBAL CORS (Render-compatible)
+// GLOBAL CORS CONFIGURATION
+// Ensure this middleware runs for ALL requests, including OPTIONS.
 // ------------------------------------
 app.use(
   cors({
-    origin: "https://rwa-solana-x402.vercel.app/",
+    origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -21,12 +24,14 @@ app.use(
       "x-payment",
       "authorization",
     ],
+    // IMPORTANT: Credentials must be true if the frontend requires them, but since you set it to false, we keep it.
     credentials: false,
   })
 );
 
-// Preflight
-app.options("*", cors());
+// Note: The global app.use(cors) handles OPTIONS requests automatically,
+// so the explicit app.options("*", cors()) call is redundant but harmless.
+// app.options("*", cors());
 
 app.use(express.json());
 
@@ -68,9 +73,9 @@ app.post("/api/paid-endpoint", async (req, res) => {
   if (!paymentHeader) {
     const resp = x402.create402Response(paymentRequirements);
 
-    // CORS headers must be set BEFORE sending response
-    res.setHeader("Access-Control-Allow-Origin", "https://rwa-solana-x402.vercel.app");
-    res.setHeader("Access-Control-Allow-Headers", "*");
+    // --- REMOVED MANUAL HEADER SETTING ---
+    // The global CORS middleware handles setting the 'Access-Control-Allow-Origin'
+    // and other necessary headers for both successful and 402 responses.
 
     return res.status(resp.status).json(resp.body);
   }
