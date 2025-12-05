@@ -10,12 +10,22 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",            // local frontend for dev
-      "https://rwa-solana-x402.vercel.app", // your production frontend
+      "http://localhost:5173",
+      "https://rwa-solana-x402.vercel.app",
     ],
-    methods: ["POST"],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "x-total-cost",
+      "x-property-id",
+      "x-quantity",
+      "x-payment",
+      "authorization",
+    ],
   })
 );
+
+app.options("*", cors());
 
 app.use(express.json());
 
@@ -29,6 +39,8 @@ const x402 = new X402PaymentHandler({
     ? process.env.TREASURY_WALLET_ADDRESS
     : "",
 });
+
+app.options("/api/paid-endpoint", cors());
 
 // ----------------------------------
 app.post("/api/paid-endpoint", async (req, res) => {
