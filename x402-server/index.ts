@@ -10,7 +10,6 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
       "https://rwa-solana-x402.vercel.app",
     ],
     methods: ["GET", "POST", "OPTIONS"],
@@ -60,13 +59,17 @@ app.post("/api/paid-endpoint", async (req, res) => {
     network: "solana-devnet",
     config: {
       description: `Purchase of ${req.body.quantity} shares`,
-      resource: "http://localhost:4000/api/paid-endpoint",
+      resource: "https://rwa-solana-x402.onrender.com/api/paid-endpoint",
       discoverable: false,
     },
   });
 
   if (!paymentHeader) {
     const response = x402.create402Response(paymentRequirements);
+
+    res.setHeader("Access-Control-Allow-Origin", "https://rwa-solana-x402.vercel.app");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+
     return res.status(response.status).json(response.body);
   }
 
