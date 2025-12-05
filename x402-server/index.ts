@@ -6,12 +6,12 @@ dotenv.config();
 
 const app = express();
 
-// ------------------ SECURE CORS ------------------
+// ------------------------------------
+// GLOBAL CORS (Render-compatible)
+// ------------------------------------
 app.use(
   cors({
-    origin: [
-      "https://rwa-solana-x402.vercel.app",
-    ],
+    origin: "https://rwa-solana-x402.vercel.app",
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -21,27 +21,25 @@ app.use(
       "x-payment",
       "authorization",
     ],
+    credentials: false,
   })
 );
 
+// Preflight
 app.options("*", cors());
 
 app.use(express.json());
 
-// IMPORTANT: devnet USDC mint
+// ------------------------------------
 const USDC_DEVNET = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
 
 const x402 = new X402PaymentHandler({
   network: "solana-devnet",
   facilitatorUrl: "https://facilitator.payai.network",
-  treasuryAddress: process.env.TREASURY_WALLET_ADDRESS
-    ? process.env.TREASURY_WALLET_ADDRESS
-    : "",
+  treasuryAddress: process.env.TREASURY_WALLET_ADDRESS || "",
 });
 
-app.options("/api/paid-endpoint", cors());
-
-// ----------------------------------
+// ------------------------------------
 app.post("/api/paid-endpoint", async (req, res) => {
   const paymentHeader = x402.extractPayment(req.headers);
 
@@ -64,15 +62,22 @@ app.post("/api/paid-endpoint", async (req, res) => {
     },
   });
 
+  // ------------------------------
+  // 402 PAYMENT REQUIRED
+  // ------------------------------
   if (!paymentHeader) {
-    const response = x402.create402Response(paymentRequirements);
+    const resp = x402.create402Response(paymentRequirements);
 
+    // CORS headers must be set BEFORE sending response
     res.setHeader("Access-Control-Allow-Origin", "https://rwa-solana-x402.vercel.app");
-  res.setHeader("Access-Control-Allow-Headers", "*");
+    res.setHeader("Access-Control-Allow-Headers", "*");
 
-    return res.status(response.status).json(response.body);
+    return res.status(resp.status).json(resp.body);
   }
 
+  // ------------------------------
+  // VERIFY PAYMENT
+  // ------------------------------
   const verified = await x402.verifyPayment(paymentHeader, paymentRequirements);
 
   if (!verified) {
@@ -80,18 +85,16 @@ app.post("/api/paid-endpoint", async (req, res) => {
   }
 
   const tx = await x402.settlePayment(paymentHeader, paymentRequirements);
-  console.log(`Payment settled successfully for Tx: ${tx}`);
-  const txHash = tx.transaction;
 
   return res.json({
     ok: true,
-    txHash,
+    txHash: tx.transaction,
     amount: totalCost,
     msg: "Payment success",
   });
 });
 
-// ----------------------------------
+// ------------------------------------
 app.listen(4000, () => {
   console.log("Backend running on port 4000");
 });
