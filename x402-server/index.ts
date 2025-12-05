@@ -11,7 +11,7 @@ const app = express();
 // ------------------------------------
 app.use(
   cors({
-    origin: "https://rwa-solana-x402.vercel.app",
+    origin: "https://rwa-solana-x402.vercel.app/",
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
