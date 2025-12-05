@@ -10,7 +10,8 @@ const FRONTEND_ORIGIN = "https://rwa-solana-x402.vercel.app";
 
 // ------------------------------------
 // GLOBAL CORS CONFIGURATION
-// Ensure this middleware runs for ALL requests, including OPTIONS.
+// This ensures that preflight (OPTIONS) requests and subsequent POST requests
+// get the necessary Access-Control-Allow-Origin header set correctly.
 // ------------------------------------
 app.use(
   cors({
@@ -29,10 +30,7 @@ app.use(
   })
 );
 
-// Note: The global app.use(cors) handles OPTIONS requests automatically,
-// so the explicit app.options("*", cors()) call is redundant but harmless.
-// app.options("*", cors());
-
+// The global app.use(cors) handles OPTIONS requests automatically.
 app.use(express.json());
 
 // ------------------------------------
@@ -73,9 +71,9 @@ app.post("/api/paid-endpoint", async (req, res) => {
   if (!paymentHeader) {
     const resp = x402.create402Response(paymentRequirements);
 
-    // --- REMOVED MANUAL HEADER SETTING ---
-    // The global CORS middleware handles setting the 'Access-Control-Allow-Origin'
-    // and other necessary headers for both successful and 402 responses.
+    // Manual CORS header setting has been removed here.
+    // The global app.use(cors) handles this automatically for all responses,
+    // including the 402 response, which resolves the preflight issue.
 
     return res.status(resp.status).json(resp.body);
   }
